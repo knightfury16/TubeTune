@@ -8,7 +8,6 @@ document.getElementById("modifyButton").addEventListener("click", async () => {
     const newTitle = document.getElementById("newTitle").value;
     console.log("TITLE:", newTitle);
     chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-        console.log(tabs)
         //only send the message if user in on youtube watch
         if (tabs[0].url.startsWith(sYoutube) || tabs[0].url.startsWith(youtube)) {
             console.log("On yoututbe")
