@@ -1,0 +1,28 @@
+{
+  "manifest_version": 3,
+  "name": "YouTube Title Modifier",
+  "version": "1.0",
+  "description": "Chrome extension to modify or remove YouTube video titles.",
+  "permissions": [
+    "activeTab",
+    "scripting",
+    "tabs"
+  ],
+  "background": {
+    "service_worker": "scripts/background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "http://*.youtube.com/*",
+        "https://*.youtube.com/*"
+      ],
+      "js": [
+        "scripts/content.js"
+      ]
+    }
+  ],
+  "action": {
+    "default_popup": "popup.html"
+  }
+}
