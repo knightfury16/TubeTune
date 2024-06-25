@@ -22,3 +22,10 @@ document.getElementById("modifyButton").addEventListener("click", async () => {
         }
     });
 });
+
+const autoHideCheckbox = document.getElementById('autoHide');
+autoHideCheckbox.addEventListener('change', function () {
+    const isChecked = autoHideCheckbox.checked;
+    // Logic to handle checkbox state change
+    console.log('Auto Hide:', isChecked);
+});
