@@ -1,50 +1,105 @@
+// local varibles
 let ytTitle = '';
-console.log("RUNNING!!");
+let hideState = false; // Track hide state locally
+let currentVideoId = '';
+
+function onStartUp() {
+  console.log("TubeTune Starting...");
+
+  const metadataElement = document.querySelector("ytd-watch-metadata");
+  if (metadataElement) {
+    currentVideoId = metadataElement.getAttribute('video-id');
+  }
+  observeVideoIdChanges(metadataElement);
+  setGlobalTitle();
+}
+
+// Observe changes to the video ID
+function observeVideoIdChanges(metadataElement) {
+  const observer = new MutationObserver((mutations) => {
+    for (const mutation of mutations) {
+      if (mutation.attributeName === 'video-id') {
+        console.log("Video ID attribute changed");
+        const newVideoId = metadataElement.getAttribute('video-id');
+        console.log("New video ID:", newVideoId, "Current video ID:", currentVideoId);
+        if (newVideoId !== currentVideoId) {
+          currentVideoId = newVideoId;
+          setGlobalTitle();
+          modifyYouTubeTitle();
+          if (hideState) {
+            console.log("Hide state is true, hiding title");
+            visibilityControl('hide');
+          }
+        }
+      }
+    }
+  });
+
+  observer.observe(metadataElement, { attributes: true });
+  console.log("Started observing video ID changes");
+}
+
+
+function setGlobalTitle(modifiedTitle = null) {
+  //getting the title from tab title, element title does not load properly
+  const titleElement = document.querySelector("title");
+  console.log("Title from title: ", titleElement.innerHTML);
+  if (titleElement) {
+    if (modifiedTitle) {
+      ytTitle = modifiedTitle;
+    } else {
+      ytTitle = titleElement.textContent;
+    }
+    console.log("Global title set to: ", ytTitle);
+  }
+}
 
 function modifyYouTubeTitle(newTitle = null) {
 
   const titleElement = document.querySelector("#title h1 yt-formatted-string");
-  const tabTitle = document.querySelector("title");
-
-  console.log("FOUND TITLTE:", titleElement.textContent);
 
   // Check if the title element exists
   if (titleElement) {
     if (newTitle) {
-      titleElement.textContent = newTitle;
-      tabTitle.textContent = `${newTitle} - Youtube`;
-      ytTitle = newTitle;
-      chrome.runtime.sendMessage({ action: "setHideState", hideState: false });
+      setGlobalTitle(newTitle);
+      titleElement.textContent = ytTitle;
     }
     // If no new title is provided, remove the title
     else {
-      ytTitle = titleElement.textContent;
-      console.log("title:  ", ytTitle);
-      titleElement.textContent = "";
-      tabTitle.textContent = "Youtube";
+      // titleElement.textContent = "";
+      titleElement.textContent = ytTitle;
     }
   }
 }
 
 function visibilityControl(operation) {
+
+  const tabTitle = document.querySelector("title");
   const titleElement = document.querySelector("#title h1 yt-formatted-string");
+
   if (operation === 'hide') {
-    // titleElement.style.display = "none";
-    modifyYouTubeTitle()
+    titleElement.style.display = "none";
+    tabTitle.textContent = "Youtube";
+    hideState = true;
+    chrome.runtime.sendMessage({ action: "setHideState", hideState: true });
   }
   else if (operation === 'show') {
-    // titleElement.style.display = "block";
-    modifyYouTubeTitle(ytTitle);
+    titleElement.style.display = "block";
+    tabTitle.textContent = `${ytTitle} - Youtube`;
+    hideState = false;
+    chrome.runtime.sendMessage({ action: "setHideState", hideState: false });
   }
 }
 
 //On startup
+setTimeout(onStartUp, 500); // let DOM elements load
 
 // Listen for messages from the popup 
 chrome.runtime.onMessage.addListener(async (request, sender, sendResponse) => {
   if (request.action === "modifyTitle") {
     const { newTitle } = request;
     modifyYouTubeTitle(newTitle);
+    visibilityControl('show');
   }
   else if (request.action === 'show') {
     visibilityControl('show');

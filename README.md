@@ -45,4 +45,4 @@ The extension automatically removes the YouTube video title when a video page lo
 ```
 
 ### Todo:
-- [ ] Automatic Title Removal
+- [x] Automatic Title Removal
