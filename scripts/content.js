@@ -76,15 +76,18 @@ function visibilityControl(operation) {
 
   const tabTitle = document.querySelector("title");
   const titleElement = document.querySelector("#title h1 yt-formatted-string");
+  const fullScreenElement = document.getElementsByClassName('ytp-chrome-top')[0];
 
   if (operation === 'hide') {
     titleElement.style.display = "none";
+    fullScreenElement.style.visibility = 'hidden';
     tabTitle.textContent = "Youtube";
     hideState = true;
     chrome.runtime.sendMessage({ action: "setHideState", hideState: true });
   }
   else if (operation === 'show') {
     titleElement.style.display = "block";
+    fullScreenElement.style.visibility = 'visible';
     tabTitle.textContent = `${ytTitle} - Youtube`;
     hideState = false;
     chrome.runtime.sendMessage({ action: "setHideState", hideState: false });
