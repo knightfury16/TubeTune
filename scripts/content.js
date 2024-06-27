@@ -12,6 +12,7 @@ function onStartUp() {
   }
   observeVideoIdChanges(metadataElement);
   setGlobalTitle();
+  chrome.runtime.sendMessage({ action: "setBadge", text: "Off"});
 }
 
 // Observe changes to the video ID
