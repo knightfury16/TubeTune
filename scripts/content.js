@@ -96,7 +96,7 @@ function visibilityControl(operation) {
 }
 
 //On startup
-setTimeout(onStartUp, 500); // let DOM elements load
+setTimeout(onStartUp, 1000); // let DOM elements load
 
 // Listen for messages from the popup 
 chrome.runtime.onMessage.addListener(async (request, sender, sendResponse) => {
