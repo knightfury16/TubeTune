@@ -19,7 +19,7 @@ chrome.commands.onCommand.addListener(command => {
         } else {
           chrome.tabs.sendMessage(tabs[0].id, { action: 'show' }, response => {
             console.log('Title modified:', response?.status);
-            setBadge('Off', 'red');
+            setBadge('Off');
           });
           hideState = !hideState;
         }
@@ -28,7 +28,7 @@ chrome.commands.onCommand.addListener(command => {
   }
 });
 
-function setBadge(text, color = 'red') {
+function setBadge(text, color = '#FF8A8A') {
   chrome.tabs.query({ active: true, currentWindow: true }, tabs => {
     console.log('On yoututbe');
     chrome.action.setBadgeText({
