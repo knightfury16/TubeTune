@@ -1,6 +1,8 @@
 const sYoutube = 'https://www.youtube.com/watch';
 const youtube = 'http://www.youtube.com/watch';
 let hideState = false;
+const badgeColorOn = 'green';
+const badgeColorOff = '#FF8A8A';
 
 chrome.commands.onCommand.addListener(command => {
   console.log('command', command);
@@ -13,7 +15,7 @@ chrome.commands.onCommand.addListener(command => {
         if (!hideState) {
           chrome.tabs.sendMessage(tabs[0].id, { action: 'hide' }, response => {
             console.log('Title modified:', response?.status);
-            setBadge('On', 'green');
+            setBadge('On', badgeColorOn);
           });
           hideState = !hideState;
         } else {
@@ -28,7 +30,8 @@ chrome.commands.onCommand.addListener(command => {
   }
 });
 
-function setBadge(text, color = '#FF8A8A') {
+function setBadge(text, color) {
+  const badgeColor = color ?? badgeColorOff;
   chrome.tabs.query({ active: true, currentWindow: true }, tabs => {
     console.log('On yoututbe');
     chrome.action.setBadgeText({
@@ -36,7 +39,7 @@ function setBadge(text, color = '#FF8A8A') {
       tabId: tabs[0].id
     });
     chrome.action.setBadgeBackgroundColor({
-      color: color,
+      color: badgeColor,
       tabId: tabs[0].id
     });
   });
@@ -46,6 +49,9 @@ function setBadge(text, color = '#FF8A8A') {
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === 'setHideState') {
     hideState = request.hideState;
+    const badgeText = hideState ? 'On' : 'Off';
+    const badgeColor = badgeText == 'On' ? badgeColorOn : badgeColorOff;
+    setBadge(badgeText, badgeColor);
   }
   if (request.action === 'setBadge') {
     const text = request.text;
