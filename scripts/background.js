@@ -1,5 +1,5 @@
-const sYoutube = 'https://www.youtube.com/watch';
-const youtube = 'http://www.youtube.com/watch';
+const sYoutube = 'https://www.youtube.com/';
+const youtube = 'http://www.youtube.com/';
 let hideState = false;
 const badgeColorOn = 'green';
 const badgeColorOff = '#FF8A8A';
