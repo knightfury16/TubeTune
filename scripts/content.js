@@ -114,7 +114,7 @@ function retryOnStartUp(retries, interval) {
   });
 }
 
-retryOnStartUp(5, 100);
+retryOnStartUp(5, 1000);
 
 // Listen for messages from the popup
 chrome.runtime.onMessage.addListener(async (request, sender, sendResponse) => {
