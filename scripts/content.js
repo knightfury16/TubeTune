@@ -96,7 +96,25 @@ function visibilityControl(operation) {
 }
 
 //On startup
-setTimeout(onStartUp, 1000); // let DOM elements load
+function retryOnStartUp(retries, interval) {
+  return new Promise((resolve, reject) => {
+    function attempt(n) {
+      onStartUp()
+        .then(resolve)
+        .catch(error => {
+          if (n === 0) {
+            reject(error);
+          } else {
+            console.log(`Retrying... attempts left: ${n}`);
+            setTimeout(() => attempt(n - 1), interval);
+          }
+        });
+    }
+    attempt(retries);
+  });
+}
+
+retryOnStartUp(5, 100);
 
 // Listen for messages from the popup
 chrome.runtime.onMessage.addListener(async (request, sender, sendResponse) => {
