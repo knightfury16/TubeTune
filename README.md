@@ -5,7 +5,7 @@ TubeTune is a Chrome extension designed to modify or remove YouTube video titles
 ## Features
 
 - Modify YouTube video titles via a popup.
-- Use keyboard shortcuts to hide titles or open the popup.
+- Use keyboard shortcuts to hide titles `Ctrl+M` or open the popup `Shift+Ctrl+Y`.
 
 ## Installation
 
