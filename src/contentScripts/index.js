@@ -143,4 +143,4 @@ function initializeMessageEventListner() {
   );
 }
 
-initialize();
+export { initialize };
