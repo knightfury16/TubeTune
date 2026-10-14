@@ -9,20 +9,45 @@
     "48": "icons/icon-48.png",
     "128": "icons/icon-128.png"
   },
-  "permissions": ["activeTab", "scripting", "tabs", "storage"],
+  "permissions": [
+    "storage"
+  ],
+  "host_permissions": [
+    "*://www.youtube.com/*"
+  ],
   "background": {
     "service_worker": "scripts/background.js"
   },
   "content_scripts": [
     {
-      "matches": ["http://*.youtube.com/*", "https://*.youtube.com/*"],
-      "js": ["scripts/content.js"]
+      "matches": [
+        "*://www.youtube.com/*"
+      ],
+      "js": [
+        "scripts/shared.js",
+        "scripts/content.js"
+      ],
+      "css": [
+        "styles/hide.css"
+      ],
+      "run_at": "document_start"
+    },
+    {
+      "matches": [
+        "*://www.youtube.com/*"
+      ],
+      "js": [
+        "scripts/media-session.js"
+      ],
+      "run_at": "document_start",
+      "world": "MAIN"
     }
   ],
   "commands": {
     "hide": {
       "suggested_key": {
-        "default": "Ctrl+M"
+        "default": "Ctrl+M",
+        "mac": "MacCtrl+M"
       },
       "description": "Hide title on the current page"
     },

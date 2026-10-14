@@ -1,0 +1,35 @@
+/* Custom title from the popup replaces YouTube's heading text, in or out of hide mode */
+#tubetune-custom-title {
+    display: none;
+}
+
+html[data-tubetune-custom] #tubetune-custom-title {
+    display: inline;
+}
+
+html[data-tubetune-custom] ytd-watch-metadata #title h1:has(#tubetune-custom-title) yt-formatted-string {
+    display: none !important;
+}
+
+/* Applied while hide mode is on: content.js sets data-tubetune-hidden on <html>,
+   and data-tubetune-custom while the video has a custom title from the popup. */
+
+/* Watch page heading, unless the video has a custom title */
+html[data-tubetune-hidden]:not([data-tubetune-custom]) ytd-watch-metadata #title h1,
+html[data-tubetune-hidden]:not([data-tubetune-custom]) ytd-video-primary-info-renderer h1.title {
+    display: none !important;
+}
+
+/* Title over the player (on hover and in fullscreen) */
+html[data-tubetune-hidden] .html5-video-player .ytp-title,
+html[data-tubetune-hidden] .ytp-fullscreen-metadata .ytPlayerOverlayVideoDetailsRendererTitle,
+/* Miniplayer */
+html[data-tubetune-hidden] .ytdMiniplayerInfoBarTitle,
+html[data-tubetune-hidden] ytd-miniplayer .miniplayer-title,
+/* Title repeated at the top of the expanded description */
+html[data-tubetune-hidden] yt-video-title-header-view-model,
+html[data-tubetune-hidden] ytd-video-description-header-renderer #title,
+/* Shorts */
+html[data-tubetune-hidden] yt-shorts-video-title-view-model {
+    visibility: hidden !important;
+}
