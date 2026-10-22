@@ -1,15 +1,16 @@
 {
   "name": "hite",
   "version": "1.0.0",
-  "description": "",
-  "main": "popup.js",
+  "description": "Chrome extension to modify or remove YouTube video titles.",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "playwright test",
+    "test:headed": "playwright test --headed"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "dependencies": {
+  "devDependencies": {
+    "@playwright/test": "^1.64.0",
     "chrome-types": "^0.1.288"
   }
 }

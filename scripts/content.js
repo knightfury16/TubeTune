@@ -1,131 +1,106 @@
-// local varibles
-let ytTitle = '';
-let hideState = false; // Track hide state locally
-let currentVideoId = '';
+// content.js (shared.js is loaded first). Runs at document_start so hide mode is
+// flagged on <html> before YouTube renders anything; styles/hide.css does the hiding.
+const HEADING = 'ytd-watch-metadata #title h1';
+const CUSTOM_TITLE_ID = 'tubetune-custom-title';
+const HIDDEN_ATTR = 'data-tubetune-hidden';
+const CUSTOM_ATTR = 'data-tubetune-custom';
+const HIDDEN_TAB_TITLE = 'YouTube';
 
-function onStartUp() {
-    console.log('TubeTune Starting...');
-    return new Promise((resolve, reject) => {
-        const metadataElement = document.querySelector('ytd-watch-metadata');
-        if (metadataElement) {
-            currentVideoId = metadataElement.getAttribute('video-id');
-            observeVideoIdChanges(metadataElement);
-            setGlobalTitle();
-            chrome.runtime.sendMessage({ action: 'setBadge', text: 'Off' });
-            resolve(metadataElement);
-        } else {
-            reject();
+let hideState = DEFAULT_HIDE_STATE; // Mirrors chrome.storage.local, which the background owns
+let customTitle = null; // Set from the popup, cleared when the page changes
+let realTabTitle = ''; // Last tab title YouTube itself wrote
+let titleObserver = null;
+
+const showsVideoTitle = () => location.pathname === '/watch' || location.pathname.startsWith('/shorts/');
+
+function applyVisibility() {
+    document.documentElement.toggleAttribute(HIDDEN_ATTR, hideState);
+    document.documentElement.toggleAttribute(CUSTOM_ATTR, customTitle !== null);
+    if (!realTabTitle) return;
+    let tabTitle = realTabTitle;
+    if (showsVideoTitle() && customTitle) tabTitle = `${customTitle} - YouTube`;
+    else if (showsVideoTitle() && hideState) tabTitle = HIDDEN_TAB_TITLE;
+    writeTabTitle(tabTitle);
+}
+
+// Drops the observer's record of our own write, so it only ever reports YouTube's.
+function writeTabTitle(text) {
+    if (document.title !== text) document.title = text;
+    titleObserver?.takeRecords();
+}
+
+async function loadHideState() {
+    hideState = await readHideState();
+    applyVisibility();
+}
+
+// <title> is parsed early in <head>; wait for it, then follow every title YouTube writes.
+function whenTitleElement(callback) {
+    const existing = document.querySelector('title');
+    if (existing) return callback(existing);
+    const observer = new MutationObserver(() => {
+        const titleElement = document.querySelector('title');
+        if (titleElement) {
+            observer.disconnect();
+            callback(titleElement);
         }
     });
+    observer.observe(document, { childList: true, subtree: true });
 }
 
-// Observe changes to the video ID
-function observeVideoIdChanges(metadataElement) {
-    const observer = new MutationObserver(mutations => {
-        for (const mutation of mutations) {
-            if (mutation.attributeName === 'video-id') {
-                console.log('Video ID attribute changed');
-                const newVideoId = metadataElement.getAttribute('video-id');
-                console.log('New video ID:', newVideoId, 'Current video ID:', currentVideoId);
-                if (newVideoId !== currentVideoId) {
-                    currentVideoId = newVideoId;
-                    setGlobalTitle();
-                    modifyYouTubeTitle();
-                    if (hideState) {
-                        console.log('Hide state is true, hiding title');
-                        visibilityControl('hide');
-                    }
-                }
-            }
-        }
-    });
-
-    observer.observe(metadataElement, { attributes: true });
-    console.log('Started observing video ID changes');
+function observeTabTitle(titleElement) {
+    const onTitle = () => {
+        realTabTitle = document.title;
+        applyVisibility();
+    };
+    titleObserver = new MutationObserver(onTitle);
+    titleObserver.observe(titleElement, { childList: true, characterData: true, subtree: true });
+    onTitle();
 }
 
-function setGlobalTitle(modifiedTitle = null) {
-    //getting the title from tab title, element title does not load properly
-    const titleElement = document.querySelector('title');
-    console.log('Title from title: ', titleElement.innerHTML);
-    if (titleElement) {
-        if (modifiedTitle) {
-            ytTitle = modifiedTitle;
-        } else {
-            ytTitle = titleElement.textContent;
-        }
-        console.log('Global title set to: ', ytTitle);
+// YouTube stops updating its heading once anything rewrites it, so a custom
+// title goes in its own element and hide.css swaps the two.
+function setCustomTitle(title) {
+    const heading = document.querySelector(HEADING);
+    if (!heading) return;
+    let custom = document.getElementById(CUSTOM_TITLE_ID);
+    if (!custom) {
+        custom = document.createElement('span');
+        custom.id = CUSTOM_TITLE_ID;
+        heading.append(custom);
     }
+    custom.textContent = title;
+    customTitle = title;
+    applyVisibility();
 }
 
-function modifyYouTubeTitle(newTitle = null) {
-    const titleElement = document.querySelector('#title h1 yt-formatted-string');
+function resetCustomTitle() {
+    document.getElementById(CUSTOM_TITLE_ID)?.remove();
+    customTitle = null;
+    applyVisibility();
+}
 
-    // Check if the title element exists
-    if (titleElement) {
-        if (newTitle) {
-            setGlobalTitle(newTitle);
-            titleElement.textContent = ytTitle;
-        }
-        // If no new title is provided, remove the title
-        else {
-            // titleElement.textContent = "";
-            titleElement.textContent = ytTitle;
-        }
+applyVisibility(); // Hidden by default until storage says otherwise
+loadHideState();
+whenTitleElement(observeTabTitle);
+
+// A custom title belongs to one video; YouTube navigates without reloading.
+document.addEventListener('yt-navigate-finish', resetCustomTitle);
+
+chrome.storage.onChanged.addListener((changes, area) => {
+    if (area === 'local' && HIDE_STATE_KEY in changes) {
+        hideState = changes[HIDE_STATE_KEY].newValue ?? DEFAULT_HIDE_STATE;
+        applyVisibility();
     }
-}
-
-function visibilityControl(operation) {
-    const tabTitle = document.querySelector('title');
-    const titleElement = document.querySelector('#title h1 yt-formatted-string');
-    const fullScreenElement = document.getElementsByClassName('ytp-chrome-top')[0];
-
-    if (operation === 'hide') {
-        titleElement.style.display = 'none';
-        fullScreenElement.style.visibility = 'hidden';
-        tabTitle.textContent = 'Youtube';
-        hideState = true;
-        chrome.runtime.sendMessage({ action: 'setHideState', hideState: true });
-    } else if (operation === 'show') {
-        titleElement.style.display = 'block';
-        fullScreenElement.style.visibility = 'visible';
-        tabTitle.textContent = `${ytTitle} - Youtube`;
-        hideState = false;
-        chrome.runtime.sendMessage({ action: 'setHideState', hideState: false });
-    }
-}
-
-//On startup
-function retryOnStartUp(retries, interval) {
-    return new Promise((resolve, reject) => {
-        function attempt(n) {
-            onStartUp()
-                .then(resolve)
-                .catch(error => {
-                    if (n === 0) {
-                        reject(error);
-                    } else {
-                        console.log(`Retrying... attempts left: ${n}`);
-                        setTimeout(() => attempt(n - 1), interval);
-                    }
-                });
-        }
-        attempt(retries);
-    });
-}
-
-retryOnStartUp(5, 1000);
+});
 
 // Listen for messages from the popup
-chrome.runtime.onMessage.addListener(async (request, sender, sendResponse) => {
+chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     if (request.action === 'modifyTitle') {
-        const { newTitle } = request;
-        modifyYouTubeTitle(newTitle);
-        visibilityControl('show');
-    } else if (request.action === 'show') {
-        visibilityControl('show');
-    } else if (request.action === 'hide') {
-        visibilityControl('hide');
+        const title = String(request.newTitle ?? '').replace(/\s+/g, ' ').trim();
+        if (title) setCustomTitle(title);
+    } else if (request.action === 'resetTitle') {
+        resetCustomTitle();
     }
     sendResponse({ status: 'Success' });
 });

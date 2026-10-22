@@ -1,47 +1,312 @@
 <!-- popup.html -->
 <!DOCTYPE html>
-<html>
+<html lang="en">
 
 <head>
+  <meta charset="utf-8">
   <title>TubeTune</title>
+  <script src="scripts/shared.js" defer></script>
   <script src="scripts/popup.js" defer></script>
   <style>
+    :root {
+      --paper: #F6F7F9;
+      --surface: #FFFFFF;
+      --ink: #1C2233;
+      --redaction: #262C3F;
+      --switch-on: #262C3F;
+      --highlight: #FFE16A;
+      --muted: #667085;
+      --line: #E2E5EB;
+      --focus: #4C6FFF;
+      --danger: #B42318;
+      color-scheme: light;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --paper: #171B26;
+        --surface: #1F2433;
+        --ink: #E9ECF2;
+        --redaction: #4A5269;
+        --switch-on: #C9CFDC;
+        --highlight: rgba(255, 225, 106, .32);
+        --muted: #98A0B3;
+        --line: #2E3446;
+        --focus: #8FA6FF;
+        --danger: #FF9C8F;
+        color-scheme: dark;
+      }
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
     body {
-      font-family: Arial, sans-serif;
-      margin: 15px;
+      width: 320px;
+      margin: 0;
+      padding: 16px 18px 14px;
+      background: var(--paper);
+      color: var(--ink);
+      font: 13px/1.45 "Segoe UI Variable Text", "Segoe UI", system-ui, -apple-system, sans-serif;
+    }
+
+    header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 14px;
+    }
+
+    header img {
+      width: 20px;
+      height: 20px;
     }
 
     h1 {
-      font-size: 24px;
-      margin-bottom: 15px;
+      margin: 0;
+      font-size: 15px;
+      font-weight: 600;
+      letter-spacing: -0.01em;
+    }
+
+    h2 {
+      margin: 0 0 2px;
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    p {
+      margin: 0;
+    }
+
+    .help {
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    /* The redaction preview: a bar covers the title while titles are hidden. */
+    .preview {
+      position: relative;
+      display: inline-block;
+      margin: 0 0 6px;
+      font-size: 17px;
+      font-weight: 600;
+      letter-spacing: -0.015em;
+    }
+
+    .preview-text {
+      background: linear-gradient(transparent 58%, var(--highlight) 58%);
+      padding: 0 2px;
+    }
+
+    .preview::after {
+      content: "";
+      position: absolute;
+      inset: 2px -3px 1px;
+      border-radius: 2px;
+      background: var(--redaction);
+      transform-origin: right center;
+      transform: scaleX(0);
+    }
+
+    /* Animate only in answer to a click, not when the popup first opens. */
+    body.ready .preview::after {
+      transition: transform 260ms cubic-bezier(.2, .7, .2, 1);
+    }
+
+    body.ready .switch,
+    body.ready .switch::after {
+      transition: background 160ms, transform 160ms;
+    }
+
+    body[data-hidden] .preview::after {
+      transform: scaleX(1);
+      transform-origin: left center;
+    }
+
+    #modeLine {
+      margin-bottom: 12px;
+    }
+
+    /* Hide-mode switch */
+    #toggleButton {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      width: 100%;
+      padding: 9px 12px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--surface);
+      color: var(--ink);
+      font: inherit;
+      font-weight: 600;
+      text-align: left;
+      cursor: pointer;
+    }
+
+    #toggleButton:hover {
+      border-color: var(--muted);
+    }
+
+    .switch {
+      position: relative;
+      flex: none;
+      width: 30px;
+      height: 18px;
+      border-radius: 9px;
+      background: var(--line);
+    }
+
+    .switch::after {
+      content: "";
+      position: absolute;
+      top: 2px;
+      left: 2px;
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: var(--surface);
+      box-shadow: 0 1px 2px rgba(28, 34, 51, .3);
+    }
+
+    #toggleButton[aria-checked="true"] .switch {
+      background: var(--switch-on);
+    }
+
+    #toggleButton[aria-checked="true"] .switch::after {
+      transform: translateX(12px);
+    }
+
+    hr {
+      height: 1px;
+      margin: 16px 0 14px;
+      border: 0;
+      background: var(--line);
+    }
+
+    /* Rename */
+    form {
+      display: flex;
+      gap: 6px;
+      margin: 8px 0 6px;
+    }
+
+    #newTitle {
+      flex: 1;
+      min-width: 0;
+      padding: 7px 9px;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      background: var(--surface);
+      color: var(--ink);
+      font: inherit;
+    }
+
+    #newTitle::placeholder {
+      color: var(--muted);
     }
 
     #modifyButton {
-      padding: 5px 10px;
-      background-color: #2196F3;
-      color: white;
-      border: none;
+      padding: 7px 12px;
+      border: 0;
+      border-radius: 6px;
+      background: var(--ink);
+      color: var(--paper);
+      font: inherit;
+      font-weight: 600;
       cursor: pointer;
-      border-radius: 5px;
-      margin-top: 5px;
     }
 
-    #modifyButton:hover {
-      background-color: #1976D2;
+    #resetButton {
+      padding: 0;
+      border: 0;
+      background: none;
+      color: var(--ink);
+      font: inherit;
+      font-size: 12px;
+      text-decoration: underline;
+      text-underline-offset: 2px;
+      cursor: pointer;
     }
 
+    button:disabled,
+    input:disabled {
+      opacity: .45;
+      cursor: default;
+    }
+
+    #status {
+      min-height: 1.45em;
+      margin-top: 6px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    #status[data-tone="error"] {
+      color: var(--danger);
+    }
+
+    footer {
+      margin-top: 12px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    kbd {
+      padding: 1px 5px;
+      border: 1px solid var(--line);
+      border-bottom-width: 2px;
+      border-radius: 4px;
+      background: var(--surface);
+      color: var(--ink);
+      font: inherit;
+      font-size: 11px;
+    }
+
+    :focus-visible {
+      outline: 2px solid var(--focus);
+      outline-offset: 2px;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      * {
+        transition: none !important;
+      }
+    }
   </style>
 </head>
 
 <body>
-  <h1>TubeTune -Modify Title</h1>
-  <div>
-    <label for="newTitle">
-      <input type="text" id="newTitle" placeholder="Enter new title" autofocus style="margin-bottom: 5px;">
-      <button id="modifyButton">Modify Title</button>
-    </label>
-  </div>
+  <header>
+    <img src="icons/icon-32.png" alt="">
+    <h1>TubeTune</h1>
+  </header>
 
+  <section aria-labelledby="modeLine">
+    <p class="preview" aria-hidden="true"><span class="preview-text">The video's title</span></p>
+    <p id="modeLine" class="help">Titles are hidden on YouTube.</p>
+    <button id="toggleButton" type="button" role="switch" aria-checked="true">
+      <span class="switch" aria-hidden="true"></span>
+      <span>Hide titles</span>
+    </button>
+  </section>
+
+  <hr>
+
+  <section aria-labelledby="renameHeading">
+    <h2 id="renameHeading">Rename this video</h2>
+    <p class="help">Only shown to you, and dropped when you open another video.</p>
+    <form id="titleForm">
+      <input type="text" id="newTitle" placeholder="New title" aria-label="New title" autocomplete="off" autofocus>
+      <button id="modifyButton" type="submit">Rename</button>
+    </form>
+    <button id="resetButton" type="button">Restore original title</button>
+    <p id="status" role="status"></p>
+  </section>
+
+  <footer id="shortcutHint"></footer>
 </body>
 
 </html>
